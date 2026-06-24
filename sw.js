@@ -17,7 +17,7 @@
 // GitHub-Pages-подпути (https://<user>.github.io/<repo>/). Бамп CACHE при правке
 // списка/ассетов/стратегии, иначе старый кэш переживёт деплой.
 
-const CACHE = 'nucleus-seoul-v7';
+const CACHE = 'nucleus-seoul-v8';
 
 const ASSETS = [
   // НЕ кэшируем './' — на GitHub Pages корень без index.html отдаёт 404, а один
@@ -61,6 +61,8 @@ const ASSETS = [
   // Корейские лупы вердикта (фидбэк оператора 2026-06-24): флаг (VERDICT_1) + скайлайн (VERDICT_2/3).
   'assets/video/seoul_korean_flag_loop.mp4',
   'assets/video/seoul_korean_skyline_loop.mp4',
+  // «Дорогой» неон-Сеул финала (фидбэк оператора 2026-06-24) — фон FINAL вместо серого canvas.
+  'assets/video/seoul_final_neon_loop.mp4',
   // шрифты (самохост, без FOUT)
   'assets/fonts/martian-grotesk-condensed-black.woff2',
   'assets/fonts/martian-grotesk-400.woff2',

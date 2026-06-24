@@ -88,5 +88,11 @@ export const VIDEO_MANIFEST = {
   VERDICT_1: 'assets/video/seoul_korean_flag_loop.mp4',
   VERDICT_2: 'assets/video/seoul_korean_skyline_loop.mp4',
   VERDICT_3: 'assets/video/seoul_korean_skyline_loop.mp4',
-  // BOOT/LOADING/FINAL/LOCKED — без видео (LOCKED: холодный canvas-only «запечатано»).
+  // ФИНАЛ — «дорогой» неон-Сеул ночью (фидбэк оператора 2026-06-24, override C2-D11
+  // «FINAL без видео / холодный canvas»): аудитория русская, оператор просил яркий
+  // премиум-фон вместо серого канваса. Тёплое золото + фирменная бирюза (Higgsfield
+  // nano_banana → kling3_0_turbo, 9:16). Шутка цела: роскошный город → холодный
+  // русский журнал прибытия поверх (скрим в seoul.html держит читаемость текста).
+  FINAL: 'assets/video/seoul_final_neon_loop.mp4',
+  // BOOT/LOADING/LOCKED — без видео (LOCKED: холодный canvas-only «запечатано»).
 };

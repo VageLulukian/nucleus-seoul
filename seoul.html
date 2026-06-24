@@ -319,12 +319,51 @@
       line-height: 1.14; color: var(--text-hi); margin: clamp(14px, 2.6vh, 22px) 0 0 0; max-width: 22ch;
     }
 
-    /* Финал (кадр 13) — холодный журнал прибытия (C2-D11). Манифест-сетка как
-       VERDICT_3/LOCKED, но циан/холод, без красного и без затвора. */
-    .seoul-scene--final .seoul-zone-manifest { top: 42%; gap: clamp(14px, 2.8vh, 24px); }
+    /* Финал (кадр 13) — холодный журнал прибытия по-русски поверх «дорогого» неон-Сеула
+       (фидбэк оператора 2026-06-24, override C2-D11 «без видео/canvas»). Премиум-вёрстка:
+       скрим под текст (читаемость поверх неона), журнал стопкой в нижней «тёмной» трети
+       кадра (над улицей — естественное пустое место картинки), СЕУЛ крупно как панчлайн.
+       Всё скоупано на --final: VERDICT_3/LOCKED (общая .seoul-mrow) не трогаем. */
+    /* Скрим: верх (скайлайн) чист и светится, текстовая полоса снизу затемнена — текст
+       читается, город виден. Под текстом (z в стопке сцены), над видео (z0), под HUD (z6). */
+    .seoul-scene--final::before {
+      content: ""; position: absolute; inset: 0; pointer-events: none;
+      background: linear-gradient(180deg,
+        rgba(5,7,10,0) 0%, rgba(5,7,10,0) 30%,
+        rgba(5,7,10,0.42) 50%, rgba(5,7,10,0.80) 78%, rgba(5,7,10,0.94) 100%);
+    }
+    .seoul-scene--final .seoul-zone-manifest {
+      top: auto; bottom: 13%; gap: clamp(16px, 3vh, 30px); text-align: left;
+    }
+    /* Журнал стопкой — робастно к длинному русскому. Лейбл сверху бледно, значение снизу. */
+    .seoul-scene--final .seoul-mrow { display: block; }
+    .seoul-scene--final .seoul-mrow__k {
+      display: block; font-size: clamp(10px, 2.8vw, 13px); letter-spacing: 0.24em;
+      color: var(--text-mid); margin: 0 0 clamp(5px, 1vh, 9px) 0;
+    }
+    .seoul-scene--final .seoul-mrow__cell { display: block; justify-content: flex-start; text-align: left; }
+    /* СЕУЛ — панчлайн города: крупно, ярко, с фирменным циан-glow (как .seoul-word, мельче). */
+    .seoul-scene--final .seoul-mrow--final-hero .seoul-mrow__v {
+      font-family: var(--font-head); font-weight: 900; text-align: left;
+      font-size: clamp(46px, 14vw, 104px); line-height: 0.92; letter-spacing: 0.01em;
+      color: #F4FAFE; text-shadow: 0 0 42px var(--accent-glow), 0 0 14px rgba(88, 221, 227, 0.4);
+    }
+    /* Холодный добивающий итог — суше и мельче, моно, приглушён (казёнщина цела). */
+    .seoul-scene--final .seoul-mrow--final-kicker .seoul-mrow__v {
+      font-family: var(--font-mono); font-weight: 500; text-align: left;
+      font-size: clamp(18px, 5vw, 28px); line-height: 1.12; letter-spacing: 0.04em;
+      color: var(--text-hi);
+    }
+    /* «ЛОКАЦИЯ СОВПАДАЕТ С ПРОГНОЗОМ» — циан-акцент с ромб-тиком (система была права). */
     .seoul-finalmatch {
-      font-family: var(--font-mono); font-size: clamp(13px, 3.6vw, 18px); letter-spacing: 0.14em;
-      text-transform: uppercase; color: var(--text-mid); margin: 0;
+      display: flex; align-items: center; gap: 10px;
+      font-family: var(--font-mono); font-size: clamp(12px, 3.4vw, 16px); letter-spacing: 0.14em;
+      text-transform: uppercase; color: var(--accent); margin: 0;
+      text-shadow: 0 0 16px var(--accent-glow);
+    }
+    .seoul-finalmatch::before {
+      content: ""; flex: 0 0 auto; width: 8px; height: 8px; border: 1px solid var(--accent);
+      transform: rotate(45deg); box-shadow: 0 0 10px var(--accent-glow);
     }
 
     /* === Технический режим (кадры 3/6/9): левый «консольный» каркас. === */
