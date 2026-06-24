@@ -21,9 +21,9 @@ export const SCAN_CURVES = CORE_SCAN_CURVES; // rings.js читает ringComple
 // DEBOUNCE_PRIMARY/CURSOR_HIDE — как у ядра (UX-инварианты прибора).
 export const TIMING = {
   T_BOOT: 1.4,            // сплеш (только первая загрузка) — короче ядра (телефон)
-  T_PROC_1: 1.4,          // «пафосная обработка» перед вердиктом 1 (кадр 3) — подрезано (фидбэк 2026-06-24)
-  T_PROC_2: 0.9,          // повторный прогон — очень короткий (темп нарастает)
-  T_PROC_3: 1.1,          // третий прогон (после выключения объяснений) — короткий
+  T_PROC_1: 5.0,          // «пафосная обработка» — ДЛИННО и красиво, как в полной версии (фидбэк 2026-06-24)
+  T_PROC_2: 4.0,          // повторный прогон после RESTART — длинный (место под слой звука в монтаже)
+  T_PROC_3: 3.0,          // третий прогон (после OFF) — короче двух первых, но не куцый
   DEBOUNCE_PRIMARY: 0.25, // окно блокировки PRIMARY после входа в интеракт.
   CURSOR_HIDE: 1.5,       // автоскрытие курсора по простою (как ядро)
 };
@@ -49,19 +49,22 @@ export const COUNTERS = {
 // (обработка легче скана: кольца + большой счётчик + 2–3 строки, screen.md §5 кадр 3).
 export const SCAN_TIMELINE = {
   PROCESSING_1: {
-    duration: 1.4,          // = TIMING.T_PROC_1 (держать в синхроне — Codex plan-review)
-    statusLineInterval: 0.42,
-    statusLines: [1, 2, 3], // «Считываю контекст…» → «Сверяю траектории…» → «Оптимизирую шаг…»
+    duration: 5.0,          // = TIMING.T_PROC_1 (синхрон обязателен — selftest проверяет равенство)
+    statusLineInterval: 0.7,
+    statusLines: [1, 2, 3, 6, 7],     // 5 строк на ~5с (длинный «дорогой» прогон)
+    countTo: COUNTERS.DATA_TB, countSteps: 10, // доминанта «processing X.X TB…» считается 0→4.2
   },
   PROCESSING_2: {
-    duration: 0.9,          // = TIMING.T_PROC_2 (очень короткий повторный прогон)
-    statusLineInterval: 0.28,
-    statusLines: [4, 2, 3], // повторный прогон — «Перепроверяю baseline…» → …
+    duration: 4.0,          // = TIMING.T_PROC_2 (длинный прогон после RESTART — место под звук)
+    statusLineInterval: 0.65,
+    statusLines: [4, 8, 2, 9, 3],     // restart-регистр: baseline → сверка прогонов → траектории → сид → шаг
+    countTo: COUNTERS.DATA_TB, countSteps: 8,
   },
   PROCESSING_3: {
-    duration: 1.1,          // = TIMING.T_PROC_3 (короткий третий прогон)
-    statusLineInterval: 0.42,
-    statusLines: [5, 3],    // после OFF — суше: «Объяснения отключены…» → «Финализирую…»
+    duration: 3.0,          // = TIMING.T_PROC_3 (после OFF — суше, но не куцый)
+    statusLineInterval: 0.7,
+    statusLines: [5, 10, 11, 3],      // после OFF: «Объяснения отключены…» → суше
+    countTo: COUNTERS.DATA_TB, countSteps: 6,
   },
 };
 
@@ -71,7 +74,7 @@ export const SCAN_TIMELINE = {
 // IDLE/REPAIR/SETTINGS; scan → PROCESSING_*; calm-plate → VERDICT_*. BOOT/LOADING/FINAL
 // без видео (FINAL: красный затвор-overlay + canvas-фоллбэк). Один Layer-0, без Layer-2
 // (Codex: ≤1 декод — дёшево для записи экрана). Видео — ENHANCEMENT (нет файла → фоллбэк,
-// D-5). ВЫКЛ в ?selftest (seoul/main.js videoSource:null) — детерминизм/7 кадров. Wiring
+// D-5). ВЫКЛ в ?selftest (seoul/main.js videoSource:null) — детерминизм/8 кадров. Wiring
 // DOM — seoul.html (#video-layer-0a/b) + seoul/main.js; тут только ДАННЫЕ state→.mp4.
 export const VIDEO_MANIFEST = {
   IDLE: 'assets/video/rt_idle_reactor_loop.mp4',
@@ -80,8 +83,10 @@ export const VIDEO_MANIFEST = {
   PROCESSING_1: 'assets/video/rt_scan_loop.mp4',
   PROCESSING_2: 'assets/video/rt_scan_loop.mp4',
   PROCESSING_3: 'assets/video/rt_scan_loop.mp4',
-  VERDICT_1: 'assets/video/rt_verdict_calm_plate_loop.mp4',
-  VERDICT_2: 'assets/video/rt_verdict_calm_plate_loop.mp4',
-  VERDICT_3: 'assets/video/rt_verdict_calm_plate_loop.mp4',
-  // BOOT/LOADING/FINAL — без видео.
+  // Корейский фон вердикта (фидбэк оператора 2026-06-24, override S-D13): флаг/тэгык
+  // на главный момент SEOUL (VERDICT_1), скайлайн Сеула на сверку/манифест (VERDICT_2/3).
+  VERDICT_1: 'assets/video/seoul_korean_flag_loop.mp4',
+  VERDICT_2: 'assets/video/seoul_korean_skyline_loop.mp4',
+  VERDICT_3: 'assets/video/seoul_korean_skyline_loop.mp4',
+  // BOOT/LOADING/FINAL/LOCKED — без видео (LOCKED: холодный canvas-only «запечатано»).
 };

@@ -12,7 +12,9 @@ export function renderProcessing(ctx, _variant) {
     el('div', { class: 'seoul-rule' }),
     el('p', { class: 'seoul-coreonline', text: copy.HUD.coreOnline }),
     el('div', { class: 'seoul-zone-hero' }, [
-      el('p', { class: 'seoul-dominant', text: c.dominant }),
+      // Стартовый текст = 0.0 TB (applier считает вверх до 4.2); строится из
+      // prefix/suffix, чтобы совпасть с первым кадром аплаера (без мигания 4.2→0.0).
+      el('p', { class: 'seoul-dominant', text: c.dominantPrefix + (0).toFixed(1) + c.dominantSuffix }),
     ]),
     el('div', { class: 'seoul-zone-readout' }, [
       el('p', { class: 'seoul-query', text: c.query }),
@@ -26,11 +28,21 @@ export function renderProcessing(ctx, _variant) {
 // (1-based индекс в copy.PROCESSING.statusLines), как createScanApplier ролика №1.
 export function createProcessingApplier(node, copy) {
   const statusEl = node.querySelector('.seoul-status');
+  const domEl = node.querySelector('.seoul-dominant');
   const lines = copy.PROCESSING.statusLines;
+  const pre = copy.PROCESSING.dominantPrefix;
+  const suf = copy.PROCESSING.dominantSuffix;
   return function apply(progress) {
-    if (!progress || !statusEl) return;
-    const i = (progress.statusLine || 1) - 1;
-    const text = lines[i];
-    if (text && statusEl.textContent !== text) statusEl.textContent = text;
+    if (!progress) return;
+    if (statusEl) {
+      const i = (progress.statusLine || 1) - 1;
+      const text = lines[i];
+      if (text && statusEl.textContent !== text) statusEl.textContent = text;
+    }
+    // Счётчик-доминанта «processing X.X TB…» (scanProgress.dataTb растёт 0→4.2).
+    if (domEl && typeof progress.dataTb === 'number') {
+      const t = pre + progress.dataTb.toFixed(1) + suf;
+      if (domEl.textContent !== t) domEl.textContent = t;
+    }
   };
 }

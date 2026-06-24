@@ -194,6 +194,15 @@
       font-family: var(--font-mono); font-size: clamp(12px, 3.4vw, 18px); letter-spacing: 0.2em;
       text-transform: uppercase; color: var(--accent);
     }
+    /* Глосс под RUN-тэгом (фидбэк оператора 2026-06-24): рус. человеческая подсказка
+       зрителю, что такое «прогон». Абсолютно позиционирован под .seoul-context (top
+       8.5%), над геро-зоной (top 13%); мелкий, низкий контраст, НЕ uppercase — не спорит
+       с холодным RUN и героем SEOUL/CONFIRMED. */
+    .seoul-runhint {
+      position: absolute; top: 11.8%; left: var(--pad-x); right: var(--pad-x); text-align: center;
+      font-family: var(--font-mono); font-size: clamp(9px, 2.4vw, 12px); letter-spacing: 0.04em;
+      text-transform: none; color: var(--text-low); margin: 0; opacity: 0.66;
+    }
     .seoul-zone-hero {
       position: absolute; left: var(--pad-x); right: var(--pad-x); top: 13%; height: 47%;
       display: flex; flex-direction: column; align-items: center; justify-content: center; gap: clamp(14px, 3vh, 28px); text-align: center;
@@ -289,6 +298,30 @@
     .seoul-mrow__led {
       width: 9px; height: 9px; border-radius: 50%; background: var(--alert); flex: 0 0 auto;
       box-shadow: 0 0 8px var(--alert-glow);
+    }
+
+    /* === LOCKED — экран «залочено» (фидбэк оператора 2026-06-24): холодная печать
+       решения. Та же манифест-сетка, что VERDICT_3, но циан/холод, БЕЗ красного.
+       Карточка-печать с двойной cyan-рамкой (грамматика CONFIRMED, но в cyan) +
+       заголовок-LOCK + человеческая строка. === */
+    .seoul-scene--locked .seoul-zone-manifest { top: 30%; gap: clamp(8px, 1.8vh, 14px); }
+    /* НЕ ставим position:relative — .seoul-zone-manifest уже position:absolute (left/right
+       pad-x); relative бы сбросил его в полноширинный блок и значения уехали бы за экран.
+       Абсолютный зона-бокс сам служит containing-block для ::after. */
+    .seoul-lockcard {
+      padding: clamp(16px, 3.4vh, 26px) clamp(18px, 5vw, 30px);
+      border: 1px solid var(--line-cyan-hi);
+      background: linear-gradient(180deg, rgba(8,11,16,0.72), rgba(8,11,16,0.82));
+    }
+    .seoul-lockcard::after { content: ""; position: absolute; inset: 4px; border: 1px solid var(--line-cyan); pointer-events: none; }
+    .seoul-locktag {
+      font-family: var(--font-mono); font-size: clamp(13px, 3.6vw, 18px); letter-spacing: 0.3em;
+      text-transform: uppercase; color: var(--accent); text-shadow: 0 0 14px var(--accent-glow);
+      margin: 0 0 clamp(8px, 1.6vh, 14px) 0;
+    }
+    .seoul-lockline {
+      font-family: var(--font-head); font-weight: 900; font-size: clamp(18px, 5vw, 32px);
+      line-height: 1.14; color: var(--text-hi); margin: clamp(14px, 2.6vh, 22px) 0 0 0; max-width: 22ch;
     }
 
     /* Финал (кадр 13). */

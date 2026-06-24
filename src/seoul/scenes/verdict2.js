@@ -13,6 +13,7 @@ export function renderVerdict2(ctx) {
 
   return el('section', { class: 'seoul-scene seoul-scene--verdict seoul-scene--verdict-2' }, [
     el('p', { class: 'seoul-context', text: c.run }),
+    el('p', { class: 'seoul-runhint', text: c.runGloss }),
     el('div', { class: 'seoul-zone-hero' }, [
       el('div', { class: 'seoul-compare' }, [
         el('p', { class: 'seoul-compare__row', text: c.compareRun1 }),

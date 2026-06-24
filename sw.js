@@ -9,7 +9,7 @@
 // GitHub-Pages-подпути (https://<user>.github.io/<repo>/). Бамп CACHE при правке
 // списка/ассетов, иначе старый кэш переживёт деплой.
 
-const CACHE = 'nucleus-seoul-v4';
+const CACHE = 'nucleus-seoul-v5';
 
 const ASSETS = [
   // НЕ кэшируем './' — на GitHub Pages корень без index.html отдаёт 404, а один
@@ -33,6 +33,7 @@ const ASSETS = [
   'src/seoul/scenes/verdict3.js',
   'src/seoul/scenes/repair.js',
   'src/seoul/scenes/settings.js',
+  'src/seoul/scenes/locked.js',
   'src/seoul/scenes/final.js',
   // переиспользуемые общие примитивы (state-agnostic)
   'src/config.js',
@@ -49,6 +50,9 @@ const ASSETS = [
   'assets/video/rt_idle_reactor_loop.mp4',
   'assets/video/rt_scan_loop.mp4',
   'assets/video/rt_verdict_calm_plate_loop.mp4',
+  // Корейские лупы вердикта (фидбэк оператора 2026-06-24): флаг (VERDICT_1) + скайлайн (VERDICT_2/3).
+  'assets/video/seoul_korean_flag_loop.mp4',
+  'assets/video/seoul_korean_skyline_loop.mp4',
   // шрифты (самохост, без FOUT)
   'assets/fonts/martian-grotesk-condensed-black.woff2',
   'assets/fonts/martian-grotesk-400.woff2',

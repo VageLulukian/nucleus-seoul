@@ -1,10 +1,10 @@
 // seoul/selftest.js — headless self-test «Сеула» (?selftest=1). Зеркало паттерна
-// satellite/selftest.js: детерминизм + прямой прыжок (forceState) во ВСЕ 7
+// satellite/selftest.js: детерминизм + прямой прыжок (forceState) во ВСЕ 8
 // капчур-состояний + проверки канона из plan-review Codex:
-//   - forceState во все 7 кадров (screen.md §5), дословный текст на экране;
+//   - forceState во все 8 кадров (screen.md §5), дословный текст на экране;
 //   - детерминизм органической цепочки §4 (две прогонки → идентичный trace);
 //   - гейт пейоффа: SETTINGS→PROCESSING_3 НО-ОП, пока explainability не OFF;
-//   - accent-гард: getAccent() == cyan во всех 7 (красный НЕ на canvas);
+//   - accent-гард: getAccent() == cyan во всех 8 (красный НЕ на canvas);
 //   - «красный ровно дважды»: --alert-строка только в VERDICT_3 (.seoul-mrow--alert)
 //     + затвор FINAL (#seoul-shutter); ни в одном другом кадре красного DOM нет;
 //   - частицы ≤ лимита; visualSample детерминирован.
@@ -41,12 +41,15 @@ export async function launchSelfTest(ctx) {
 
     // --- 2. forceState во ВСЕ 7 капчур-состояний + дословный текст (§5) ---
     const captureText = [
-      [STATES.PROCESSING_1, copy.PROCESSING.dominant],
+      // Доминанта-счётчик считается 0→4.2 (applier перезаписывает «processing 4.2 TB…»
+      // на «processing 0.0 TB…» уже на входе), поэтому якорь — стабильный префикс.
+      [STATES.PROCESSING_1, copy.PROCESSING.dominantPrefix], // «processing »
       [STATES.VERDICT_1, copy.VERDICT_1.word],          // SEOUL
       [STATES.REPAIR, copy.REPAIR.recalibrate],          // RECALIBRATE BASELINE
       [STATES.VERDICT_2, copy.VERDICT_2.stamp],          // CONFIRMED
       [STATES.SETTINGS, copy.SETTINGS.temperature.label],// temperature:
       [STATES.VERDICT_3, copy.VERDICT_3.rollback.value], // NOT RECOMMENDED
+      [STATES.LOCKED, copy.LOCKED.tag],                  // DECISION LOCKED (экран «залочено»)
       [STATES.FINAL, copy.FINAL.tag],                    // RESISTANCE: ACCOUNTED FOR
     ];
     for (const [target, text] of captureText) {
@@ -99,7 +102,8 @@ export async function launchSelfTest(ctx) {
       nucleus.dispatch('TOGGLE_EXPLAINABILITY');             // OFF (пейофф)
       advTick(D + 5); nucleus.dispatch('PRIMARY');           // SETTINGS→PROCESSING_3
       advTick(T.T_PROC_3 * 1000 + 5);                        // auto→VERDICT_3
-      advTick(D + 5); nucleus.dispatch('PRIMARY');           // VERDICT_3→FINAL
+      advTick(D + 5); nucleus.dispatch('PRIMARY');           // VERDICT_3→LOCKED
+      advTick(D + 5); nucleus.dispatch('PRIMARY');           // LOCKED→FINAL
     };
     const captureRun = () => {
       nucleus.dispatch('RESET');
@@ -125,6 +129,35 @@ export async function launchSelfTest(ctx) {
       const vs2 = JSON.stringify(nucleus.test.visualSample());
       if (vs1 !== vs2) reasons.push('visualsample-not-identical');
     }
+
+    // --- 6. Инварианты конфигурации/копи (Codex plan-review 2026-06-24) ---
+    // (a) тайминги обработки задублированы (TIMING.T_PROC_* и SCAN_TIMELINE.duration) —
+    //     держим равенство, иначе кольца (rings.js: tl.duration) и авто-переход разъедутся.
+    // (b) индексы статус-строк — в пределах пула (иначе applier тихо «замораживает» строку).
+    ['PROCESSING_1', 'PROCESSING_2', 'PROCESSING_3'].forEach((k, idx) => {
+      const tl = config.SCAN_TIMELINE[k];
+      const tproc = config.TIMING['T_PROC_' + (idx + 1)];
+      if (!tl || tl.duration !== tproc) reasons.push('proc-duration-desync@' + k + ':' + (tl && tl.duration) + 'vs' + tproc);
+      const max = copy.PROCESSING.statusLines.length;
+      for (const li of (tl ? tl.statusLines : [])) {
+        if (li < 1 || li > max) reasons.push('statusline-oob@' + k + ':' + li);
+      }
+    });
+    // (c) глосс RUN на вердиктах присутствует (фича защищена тестом — RUN_GLOSS).
+    nucleus.forceState(STATES.VERDICT_1);
+    if (!sceneHas(copy.VERDICT_1.runGloss)) reasons.push('missing-rungloss@VERDICT_1');
+    nucleus.forceState(STATES.VERDICT_2);
+    if (!sceneHas(copy.VERDICT_2.runGloss)) reasons.push('missing-rungloss@VERDICT_2');
+    // (d) красный затвор #seoul-shutter активен ТОЛЬКО в FINAL — в LOCKED он погашен
+    //     (CSS-селектор html[data-state="FINAL"]). Доказываем явно (Codex).
+    nucleus.forceState(STATES.LOCKED);
+    try {
+      const sh = document.getElementById('seoul-shutter');
+      if (sh && typeof getComputedStyle === 'function') {
+        const op = getComputedStyle(sh).opacity;
+        if (op && op !== '0' && op !== '') reasons.push('shutter-active@LOCKED:' + op);
+      }
+    } catch (_) { /* нет CSSOM — пропускаем, инвариант держит CSS-селектор */ }
 
     await nextFrame();
 

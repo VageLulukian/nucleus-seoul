@@ -15,6 +15,7 @@ import { renderVerdict2 } from './verdict2.js';
 import { renderVerdict3 } from './verdict3.js';
 import { renderRepair } from './repair.js';
 import { renderSettings } from './settings.js';
+import { renderLocked } from './locked.js';
 import { renderFinal } from './final.js';
 
 const PROCESSING_STATES = new Set([
@@ -54,6 +55,7 @@ const SCENES = {
   [STATES.VERDICT_3]: (ctx) => renderVerdict3(ctx),
   [STATES.REPAIR]: (ctx) => renderRepair(ctx),
   [STATES.SETTINGS]: (ctx) => renderSettings(ctx),
+  [STATES.LOCKED]: (ctx) => renderLocked(ctx),
   [STATES.FINAL]: (ctx) => renderFinal(ctx),
 };
 

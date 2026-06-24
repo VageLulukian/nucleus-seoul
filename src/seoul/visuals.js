@@ -97,7 +97,7 @@ export function createVisuals(opts) {
   // Слои (порядок docs/03 §5: фон → сканлайны → кольца → ядро → частицы). БЕЗ glitch.
   // Фон: Layer-0 видео-лупы (videoSource из main.js) ИЛИ canvas-фоллбэк (нет видео /
   // ?selftest → videoSource:null → #05070A + глубина/вигнетка). freezeStates пуст — у
-  // «Сеула» нет LOCKED (видео нигде не замораживается).
+  // «Сеула». LOCKED — холодный canvas-only (нет в VIDEO_MANIFEST); видео не замораживается.
   const background = createBackground(config, { videoSource, manifest: videoManifest, root, freezeStates: new Set() });
   const core = createCore();
   const particles = createParticles();

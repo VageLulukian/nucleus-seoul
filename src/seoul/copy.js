@@ -30,22 +30,32 @@ export const IDLE = {
 // --- C. PROCESSING — «пафосная обработка» (screen.md §5 кадр 3). --------------
 // dominant — [КАНОН] доминанта-счётчик. query — эхо вопроса (рус., низкий контраст).
 // statusLines — 1-based пул (config.SCAN_TIMELINE[*].statusLines индексирует его):
-//   1..3 — первый прогон; 4 — повторный; 5 — после выключения объяснений.
+//   1-3,6,7 — первый прогон (длинный); 4,8,2,9,3 — повторный (RESTART); 5,10,11,3 — после OFF.
+// dominant — финальное значение (канон); счётчик идёт 0→4.2 (applier строит из prefix/suffix).
 export const PROCESSING = {
   dominant: 'processing 4.2 TB…',
+  dominantPrefix: 'processing ',     // applier: prefix + dataTb.toFixed(1) + suffix
+  dominantSuffix: ' TB…',            // (… = U+2026, как в dominant)
   query: '«у меня всё хорошо. что дальше?»',
   statusLines: [
     'Считываю контекст жизни…',        // 1
     'Сверяю 12 000 траекторий…',       // 2
     'Оптимизирую следующий шаг…',      // 3
-    'Перепроверяю baseline…',          // 4 (повторный прогон, кадр 7-обработка)
-    'Объяснения отключены. Финализирую…', // 5 (после OFF, кадр 10-обработка)
+    'Перепроверяю baseline…',          // 4 (повторный прогон)
+    'Объяснения отключены. Финализирую…', // 5 (после OFF)
+    'Развёртываю маршрут…',            // 6 (удлинение первого прогона)
+    'Считаю стоимость каждого шага…',  // 7
+    'Сверяю прогоны RUN 01 / RUN 02…', // 8 (повторный прогон после RESTART)
+    'Фиксирую сид. Дрейф устранён…',   // 9
+    'Сворачиваю альтернативы…',        // 10 (после OFF)
+    'Печатаю единственный путь…',      // 11
   ],
 };
 
 // --- D. VERDICT_1 — RUN 01, одиночный SEOUL (screen.md §5 кадр 4). ------------
 export const VERDICT_1 = {
   run: 'RUN 01',                 // [КАНОН]
+  runGloss: 'прогон №1 — первый расчёт', // рус. глосс зрителю под холодным RUN-тэгом (фидбэк 2026-06-24)
   word: 'SEOUL',                 // [КАНОН] доминанта во всю ширину
   status: 'STATUS: COMMITTED',   // [КАНОН] единственное сухое поле
   rationaleLabel: 'rationale',   // опц., бледно: «объяснение» (исчезнет к кадру 10)
@@ -66,6 +76,7 @@ export const REPAIR = {
 // --- F. VERDICT_2 — RUN 02 // CONFIRMED, сверка+штамп (screen.md §5 кадр 7). --
 export const VERDICT_2 = {
   run: 'RUN 02 // CONFIRMED //',   // [КАНОН]
+  runGloss: 'прогон №2 — перепроверка, тот же ответ', // рус. глосс зрителю (фидбэк 2026-06-24)
   compareRun1: 'RUN 01  →  SEOUL', // сверка двух прогонов
   compareRun2: 'RUN 02  →  SEOUL',
   matchLabel: 'MATCH:',
@@ -96,6 +107,21 @@ export const VERDICT_3 = {
   status: { label: 'STATUS:', value: 'COMMITTED' },                 // [КАНОН]
   rollback: { label: 'ROLLBACK:', value: 'NOT RECOMMENDED' },       // [КАНОН] красный LED+слова
   explainability: { label: 'EXPLAINABILITY:', value: 'OFF' },       // [КАНОН]
+};
+
+// --- H2. LOCKED — печать решения «залочено» (между VERDICT_3 и FINAL; фидбэк оператора
+// 2026-06-24). Холодный deploy-консольный манифест: ЧТО именно запечатано. Красного НЕТ
+// (cyan/cold) — закон «эскалация холодом»; красный остаётся ровно дважды (ROLLBACK кадра
+// 10 + затвор FINAL). Это НЕ брачная шутка LOCKED ролика №1 — у «Сеула» свой голос.
+export const LOCKED = {
+  tag: 'DECISION LOCKED',                          // [англ., приборный регистр] заголовок-печать
+  rows: [
+    { label: 'NEXT STEP:', value: 'SEOUL' },        // [КАНОН] то, что залочено
+    { label: 'COMMIT:', value: 'SEALED' },          // решение запечатано
+    { label: 'ROLLBACK:', value: 'DISABLED' },      // откат отключён (cyan, НЕ красный)
+    { label: 'SIGNATURE:', value: '0x9E37' },       // эхо seed (locked) из SETTINGS
+  ],
+  line: '«Решение принято за тебя. Откат недоступен.»', // [рус.] человеческая строка
 };
 
 // --- I. FINAL — затвор → в чёрный (screen.md §5 кадр 13). --------------------

@@ -42,14 +42,15 @@ export const STATES = Object.freeze({
   SETTINGS: 'SETTINGS',         // кадр 9 — тумблер explainability → OFF
   PROCESSING_3: 'PROCESSING_3',
   VERDICT_3: 'VERDICT_3',       // кадр 10 — сухой манифест + красный ROLLBACK
+  LOCKED: 'LOCKED',             // печать решения «залочено» — manifest SEALED (между VERDICT_3 и FINAL)
   FINAL: 'FINAL',               // кадр 13 — RESISTANCE → красный затвор → в чёрный
 });
 
-// Капчур-состояния (7) — то, что снимается/проверяется покадрово (screen.md §5).
+// Капчур-состояния (8) — то, что снимается/проверяется покадрово (screen.md §5).
 // forceState() пускает прыжок ТОЛЬКО сюда; selftest/Playwright бьют по ним.
 export const CAPTURE_STATES = Object.freeze([
   STATES.PROCESSING_1, STATES.VERDICT_1, STATES.REPAIR, STATES.VERDICT_2,
-  STATES.SETTINGS, STATES.VERDICT_3, STATES.FINAL,
+  STATES.SETTINGS, STATES.VERDICT_3, STATES.LOCKED, STATES.FINAL,
 ]);
 
 // --- События. FULLSCREEN перечислен для ПАРИТЕТА словаря ввода (controls.js
@@ -72,16 +73,18 @@ export const EVENTS = Object.freeze({
 });
 
 // PRIMARY двигает сюжет (screen.md §4): прямые цели transition()-setup'а.
-// PROCESSING_* / LOCKING / LOADING / BOOT / FINAL НЕ в карте → PRIMARY там no-op
-// (в обработке кнопки нет, FINAL терминально). SETTINGS→PROCESSING_3 — в карте, но
-// ДОПОЛНИТЕЛЬНО гейтится тумблером explainability OFF (см. dispatch PRIMARY).
+// PROCESSING_* / LOADING / BOOT / FINAL НЕ в карте → PRIMARY там no-op (в обработке
+// кнопки нет, FINAL терминально). SETTINGS→PROCESSING_3 — в карте, но ДОПОЛНИТЕЛЬНО
+// гейтится тумблером explainability OFF (см. dispatch PRIMARY). LOCKED → FINAL —
+// после экрана «залочено» оператор тапает в красный затвор.
 const PRIMARY_TARGETS = Object.freeze({
   [STATES.IDLE]: STATES.PROCESSING_1,
   [STATES.VERDICT_1]: STATES.REPAIR,      // «лезешь чинить»
   [STATES.REPAIR]: STATES.PROCESSING_2,   // RESTART → повторный прогон
   [STATES.VERDICT_2]: STATES.SETTINGS,    // «значит, глубже»
   [STATES.SETTINGS]: STATES.PROCESSING_3, // apply (после explainability→OFF)
-  [STATES.VERDICT_3]: STATES.FINAL,       // печать/затвор
+  [STATES.VERDICT_3]: STATES.LOCKED,      // печать → экран «залочено»
+  [STATES.LOCKED]: STATES.FINAL,          // «залочено» → красный затвор
 });
 
 // JUMP_n (клавиши 1–5 через общий controls.js) → 5 ключевых капчур-состояний.
@@ -102,7 +105,8 @@ const STEP_BACK_TARGETS = Object.freeze({
   [STATES.VERDICT_2]: STATES.REPAIR,
   [STATES.SETTINGS]: STATES.VERDICT_2,
   [STATES.VERDICT_3]: STATES.SETTINGS,
-  [STATES.FINAL]: STATES.VERDICT_3,
+  [STATES.LOCKED]: STATES.VERDICT_3,
+  [STATES.FINAL]: STATES.LOCKED,
 });
 
 // Состояния с «текущей репликой» для REPLAY_VOICE — вердикты. v1 нем (no-op аудио),
@@ -110,6 +114,9 @@ const STEP_BACK_TARGETS = Object.freeze({
 const REPLAY_VOICE_STATES = new Set([
   STATES.VERDICT_1, STATES.VERDICT_2, STATES.VERDICT_3,
 ]);
+
+// Округление счётчика-доминанты «processing X.X TB…» до одного знака (детерминированно).
+const round1 = (x) => Math.round(x * 10) / 10;
 
 // Внутренний no-op звук, если адаптер не инжектирован: «Сеул» по умолчанию НЕМ
 // (звук кладётся в монтаже, screen.md §4 / D-14). Держит машину автономной/DOM-free.
@@ -204,11 +211,26 @@ export function createMachine(opts) {
         kind: 'status', value: tl.statusLines[i], fired: false,
       });
     }
+    // Счётчик-доминанта «processing X.X TB…» считается ВВЕРХ дискретными шагами,
+    // равномерно по ВСЕЙ длительности (не по statusLineInterval) — число лезет весь
+    // бит, без мёртвой паузы после последней статус-строки. Те же epoch-захваченные
+    // scheduled[] (детерминизм, без vt/Date.now). Последний шаг (j=countSteps) попадает
+    // на duration и даёт ровно countTo (канон 4.2 TB); fireScheduledDue() идёт ДО
+    // fireDue() в tick() — значит финальное число применяется до авто-перехода.
+    if (tl.countTo && tl.countSteps) {
+      for (let j = 1; j <= tl.countSteps; j += 1) {
+        scheduled.push({
+          fireAt: at((j / tl.countSteps) * tl.duration), epoch: ep,
+          kind: 'count', value: round1(tl.countTo * (j / tl.countSteps)), fired: false,
+        });
+      }
+    }
   }
 
   function applyProcStep(step) {
     if (!scanProgress) return;
     if (step.kind === 'status') scanProgress.statusLine = step.value;
+    else if (step.kind === 'count') scanProgress.dataTb = step.value;
   }
 
   function fireScheduledDue() {
@@ -229,7 +251,8 @@ export function createMachine(opts) {
     if (auto) pending = { fireAt: clock() + auto.durMs, epoch: stateEpoch, target: auto.target };
     const tl = SCAN_TL[target];
     if (tl) {
-      scanProgress = { variant: target, statusLine: tl.statusLines[0] };
+      // dataTb стартует с 0.0 — счётчик-доминанта считается вверх по расписанию.
+      scanProgress = { variant: target, statusLine: tl.statusLines[0], dataTb: 0 };
       scheduleProc(target, clock());
     }
     audioForState(target);
