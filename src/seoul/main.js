@@ -25,6 +25,22 @@ document.documentElement.dataset.state = STATES.LOADING;
 const FIT = params.get('fit') === 'shoot' ? 'shoot' : 'screen';
 document.documentElement.dataset.fit = FIT;
 
+// Deep-link на конкретный кадр (?state=NAME или ?frame=N): после READY прыгаем прямо в
+// капчур-состояние. Для съёмки соло: открыл ссылку → нужный экран, без прокликивания всей
+// цепочки и без застревания на гейте SETTINGS (тумблер explainability). Напр. финал
+// (аэропорт) — ?state=FINAL или ?frame=13. Игнорируется в ?selftest (там свой драйв).
+const FRAME_TO_STATE = {
+  3: STATES.PROCESSING_1, 4: STATES.VERDICT_1, 6: STATES.REPAIR, 7: STATES.VERDICT_2,
+  8: STATES.LOCKED, 9: STATES.SETTINGS, 10: STATES.VERDICT_3, 13: STATES.FINAL,
+};
+function resolveDeepLink() {
+  const s = (params.get('state') || '').toUpperCase();
+  if (s && STATES[s] && machine.CAPTURE_STATES.indexOf(s) >= 0) return s;
+  const f = params.get('frame');
+  if (f && Object.prototype.hasOwnProperty.call(FRAME_TO_STATE, f)) return FRAME_TO_STATE[f];
+  return null;
+}
+
 // --- Ядро: машина БЕЗ аудио (экран нем → внутренний no-op-адаптер машины) ---
 const machine = createMachine({
   config,
@@ -160,6 +176,13 @@ const readyPromise = (async () => {
   );
   await Promise.all([fontsReady, firstFrame(), videoWarm]);
   machine.markReady();
+  // Deep-link: прыжок в запрошенный кадр сразу после READY (см. resolveDeepLink выше).
+  // Не в self-test (там свой драйв). forceState READY-gated и чистит BOOT-таймер → экран
+  // замирает на нужном кадре (для съёмки: открыл ссылку — снимаешь, без прокликивания).
+  if (!SELFTEST) {
+    const deepLink = resolveDeepLink();
+    if (deepLink) machine.forceState(deepLink);
+  }
   document.documentElement.dataset.ready = '1';
 })();
 
