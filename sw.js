@@ -2,14 +2,22 @@
 //
 // Цель: после ПЕРВОЙ загрузки с интернетом приложение, добавленное на экран
 // «Домой», работает БЕЗ сети — на локации/в самолёте, без компьютера рядом.
-// Стратегия cache-first: всё нужное прекэшируется на install; fetch отдаёт из
-// кэша, сеть — фоллбэк. Навигации без сети → кэшированный seoul.html.
+//
+// Стратегия по типу запроса (2026-06-24, фикс «iOS home-screen PWA показывает
+// старую кэшированную версию»):
+//   - КОД и НАВИГАЦИИ (.js/.mjs/.html/.json/.webmanifest, mode=navigate) → NETWORK-FIRST:
+//     онлайн всегда отдаём свежее (после деплоя обновляется сразу при перезапуске с
+//     сетью), офлайн → фоллбэк в кэш (навигация → seoul.html). Раньше было cache-first
+//     для ВСЕГО → код/HTML отдавались из кэша и не обновлялись, пока сам SW не сменится.
+//   - ТЯЖЁЛЫЕ НЕИЗМЕНЯЕМЫЕ АССЕТЫ (.woff2/.mp4/.png) → CACHE-FIRST: быстро + офлайн;
+//     обновляются сменой имени файла или версии CACHE.
+// Всё из ASSETS прекэшируется на install (офлайн с первой загрузки, S-D14).
 //
 // Пути относительны расположения sw.js (корень сайта) — корректны и на
 // GitHub-Pages-подпути (https://<user>.github.io/<repo>/). Бамп CACHE при правке
-// списка/ассетов, иначе старый кэш переживёт деплой.
+// списка/ассетов/стратегии, иначе старый кэш переживёт деплой.
 
-const CACHE = 'nucleus-seoul-v5';
+const CACHE = 'nucleus-seoul-v6';
 
 const ASSETS = [
   // НЕ кэшируем './' — на GitHub Pages корень без index.html отдаёт 404, а один
@@ -46,7 +54,7 @@ const ASSETS = [
   'src/visuals/media-utils.js',
   // Layer-0 фон-видео Higgsfield (фидбэк оператора 2026-06-24) — только циан-лупы.
   // Без прекэша офлайн-PWA откроется, но «дорогой» фон не приедет без сети (S-D14),
-  // поэтому кэшируем их и бампнули CACHE v3→v4 выше.
+  // поэтому кэшируем их (видео — cache-first; см. CACHE-версию выше).
   'assets/video/rt_idle_reactor_loop.mp4',
   'assets/video/rt_scan_loop.mp4',
   'assets/video/rt_verdict_calm_plate_loop.mp4',
@@ -79,27 +87,41 @@ self.addEventListener('activate', (e) => {
   );
 });
 
+// Код/HTML/навигации, которые должны обновляться сразу при онлайн-перезапуске.
+function isCodeOrNav(req) {
+  if (req.mode === 'navigate') return true;
+  return /\.(?:js|mjs|html|json|webmanifest)(?:[?#]|$)/.test(req.url);
+}
+
+// Подкэшировать успешный same-origin ответ (свежая копия в кэш для офлайна).
+function putInCache(req, res) {
+  if (res && res.ok && req.url.startsWith(self.location.origin)) {
+    const copy = res.clone();
+    caches.open(CACHE).then((c) => c.put(req, copy));
+  }
+  return res;
+}
+
 self.addEventListener('fetch', (e) => {
   const req = e.request;
   if (req.method !== 'GET') return;
+
+  if (isCodeOrNav(req)) {
+    // NETWORK-FIRST: онлайн → свежее (и обновить кэш); офлайн/ошибка → кэш, навигации
+    // фоллбэчат на оболочку seoul.html. Чинит «PWA застрял на старой версии».
+    e.respondWith(
+      fetch(req)
+        .then((res) => putInCache(req, res))
+        .catch(() => caches.match(req).then((hit) => hit
+          || (req.mode === 'navigate' ? caches.match('seoul.html') : Response.error()))),
+    );
+    return;
+  }
+
+  // CACHE-FIRST: шрифты/видео/картинки — неизменяемые, быстрый офлайн-путь.
   e.respondWith(
-    caches.match(req).then((hit) => {
-      if (hit) return hit;
-      return fetch(req)
-        .then((res) => {
-          // Подкэшировать успешно полученное того же origin (на случай, если что-то
-          // вне списка — напр. ?-вариант пути). Чужие origin не трогаем.
-          if (res && res.ok && req.url.startsWith(self.location.origin)) {
-            const copy = res.clone();
-            caches.open(CACHE).then((c) => c.put(req, copy));
-          }
-          return res;
-        })
-        .catch(() => {
-          // Офлайн и нет в кэше: для навигаций отдать оболочку seoul.html.
-          if (req.mode === 'navigate') return caches.match('seoul.html');
-          return Response.error();
-        });
-    }),
+    caches.match(req).then((hit) => hit || fetch(req)
+      .then((res) => putInCache(req, res))
+      .catch(() => Response.error())),
   );
 });

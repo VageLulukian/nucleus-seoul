@@ -472,8 +472,21 @@
        (GitHub Pages) → после первой загрузки приложение готово к работе без сети. -->
   <script>
     if ('serviceWorker' in navigator && !new URLSearchParams(location.search).has('selftest')) {
+      // controllerchange → новый SW взял управление (обновление). Перезагружаем на
+      // свежие ассеты ОДИН раз. Пропускаем ПЕРВУЮ установку (контроллера не было —
+      // страница и так с сети). Чинит «iOS PWA залип на старой версии».
+      var hadController = !!navigator.serviceWorker.controller;
+      var refreshing = false;
+      navigator.serviceWorker.addEventListener('controllerchange', function () {
+        if (refreshing || !hadController) return;
+        refreshing = true;
+        window.location.reload();
+      });
       window.addEventListener('load', function () {
-        navigator.serviceWorker.register('sw.js').catch(function () { /* нет https — без офлайна */ });
+        navigator.serviceWorker.register('sw.js').then(function (reg) {
+          // Дёрнуть проверку обновления при каждом запуске (важно для iOS home-screen PWA).
+          if (reg && typeof reg.update === 'function') { try { reg.update(); } catch (e) {} }
+        }).catch(function () { /* нет https — без офлайна */ });
       });
     }
   </script>
