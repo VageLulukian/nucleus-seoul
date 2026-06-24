@@ -6,7 +6,7 @@ export function renderIdle(ctx) {
   const { el, copy, machine } = ctx;
   const c = copy.IDLE;
 
-  const cta = el('button', { class: 'seoul-cta', type: 'button', text: c.cta });
+  const cta = el('button', { class: 'seoul-cta seoul-cta--primary', type: 'button', text: c.cta });
   cta.addEventListener('click', () => machine.dispatch('PRIMARY'));
 
   return el('section', { class: 'seoul-scene seoul-scene--idle' }, [

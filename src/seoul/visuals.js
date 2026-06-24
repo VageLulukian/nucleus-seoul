@@ -65,6 +65,11 @@ export function createVisuals(opts) {
   const canvas = (opts && opts.canvas) || null;
   const root = (opts && opts.root) || (typeof document !== 'undefined' ? document.documentElement : null);
   const ctx = canvas && typeof canvas.getContext === 'function' ? canvas.getContext('2d') : null;
+  // Layer-0 фон-видео (фидбэк оператора 2026-06-24): пробрасываем videoSource/манифест
+  // в общий background.js (тот же шов, что у ядра src/main.js). null (нет элементов /
+  // ?selftest) → чистый canvas-фоллбэк, поведение байт-идентично прежнему B1.
+  const videoSource = (opts && opts.videoSource) || null;
+  const videoManifest = (opts && opts.videoManifest) || {};
 
   // Палитра-токен — один раз из CSS. accent у «Сеула» НЕ меняется по состоянию
   // (cyan всегда), но читаем реальный --accent (#58DDE3), не литерал.
@@ -90,8 +95,10 @@ export function createVisuals(opts) {
   }
 
   // Слои (порядок docs/03 §5: фон → сканлайны → кольца → ядро → частицы). БЕЗ glitch.
-  // Фон без видео (videoSource:null) → canvas-фоллбэк (#05070A + глубина/вигнетка).
-  const background = createBackground(config, { videoSource: null, manifest: {}, root, freezeStates: new Set() });
+  // Фон: Layer-0 видео-лупы (videoSource из main.js) ИЛИ canvas-фоллбэк (нет видео /
+  // ?selftest → videoSource:null → #05070A + глубина/вигнетка). freezeStates пуст — у
+  // «Сеула» нет LOCKED (видео нигде не замораживается).
+  const background = createBackground(config, { videoSource, manifest: videoManifest, root, freezeStates: new Set() });
   const core = createCore();
   const particles = createParticles();
   const scanlines = createScanlines();

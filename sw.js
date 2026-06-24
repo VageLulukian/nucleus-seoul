@@ -9,7 +9,7 @@
 // GitHub-Pages-подпути (https://<user>.github.io/<repo>/). Бамп CACHE при правке
 // списка/ассетов, иначе старый кэш переживёт деплой.
 
-const CACHE = 'nucleus-seoul-v3';
+const CACHE = 'nucleus-seoul-v4';
 
 const ASSETS = [
   // НЕ кэшируем './' — на GitHub Pages корень без index.html отдаёт 404, а один
@@ -43,6 +43,12 @@ const ASSETS = [
   'src/visuals/rings.js',
   'src/visuals/background.js',
   'src/visuals/media-utils.js',
+  // Layer-0 фон-видео Higgsfield (фидбэк оператора 2026-06-24) — только циан-лупы.
+  // Без прекэша офлайн-PWA откроется, но «дорогой» фон не приедет без сети (S-D14),
+  // поэтому кэшируем их и бампнули CACHE v3→v4 выше.
+  'assets/video/rt_idle_reactor_loop.mp4',
+  'assets/video/rt_scan_loop.mp4',
+  'assets/video/rt_verdict_calm_plate_loop.mp4',
   // шрифты (самохост, без FOUT)
   'assets/fonts/martian-grotesk-condensed-black.woff2',
   'assets/fonts/martian-grotesk-400.woff2',

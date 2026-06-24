@@ -66,12 +66,22 @@ const scenes = createScenes({
   config,
 });
 
-// --- Визуал (свой B1-оркестратор): canvas-слой, cyan-only, без видео ---
+// --- Layer-0 фон-видео Higgsfield (фидбэк оператора 2026-06-24): возвращаем «дорогой»
+// фон полной версии. Два ping-pong <video> ПОД #viz; манифест state→.mp4 — config.
+// ?selftest → видео ОТКЛЮЧЕНО (videoSource:null): smoke гоняет фоллбэк-путь (D-5) и не
+// зависит от h264 в headless — как ядро (src/main.js). Без Layer-2 (один Layer-0). ---
+const videoA = document.getElementById('video-layer-0a');
+const videoB = document.getElementById('video-layer-0b');
+const videoSource = !SELFTEST && videoA && videoB ? { a: videoA, b: videoB } : null;
+
+// --- Визуал (свой B1-оркестратор): canvas cyan-only + Layer-0 видео-лупы ---
 const visuals = createVisuals({
   machine,
   config,
   canvas: document.getElementById('viz'),
   root: document.documentElement,
+  videoSource,
+  videoManifest: config.VIDEO_MANIFEST,
 });
 
 // --- HUD-кромка ---

@@ -54,7 +54,8 @@
       --bg-900: #05070A; --bg-800: #0A0E14; --bg-700: #111722; --bg-600: #18202E;
       --text-hi: #E8EEF5; --text-mid: #AEB9C6; --text-low: #7B8796;
       --accent: #58DDE3; --accent-deep: #1AA9B5; --accent-glow: rgba(88, 221, 227, 0.28);
-      --ok: #38E8B0;
+      --ok: #38E8B0; --ok-glow: rgba(56, 232, 176, 0.30);
+      --line-ok-hi: rgba(56, 232, 176, 0.55); --line-ok: rgba(56, 232, 176, 0.30);
       --scene-accent: #58DDE3; /* seoul/visuals.js держит cyan во всех состояниях */
       --alert: #FF2D43; --alert-deep: #8E0014; --alert-glow: rgba(255, 45, 67, 0.40);
       --warn: #FFB020; --warn-glow: rgba(255, 176, 32, 0.45);
@@ -134,6 +135,22 @@
     }
     #viz { position: fixed; inset: 0; z-index: 1; display: block; width: 100%; height: 100%; pointer-events: none; }
 
+    /* Layer-0 фон-видео Higgsfield (фидбэк оператора 2026-06-24): два ping-pong
+       <video> ПОД #viz (z0). src/visuals/background.js грузит fetch→blob по состоянию
+       (404-safe) и кроссфейдит opacity. object-fit:cover, без указателя, старт
+       opacity:0 (не перекрывают первый canvas-кадр). #viz (z1) рисует cyan-слои
+       поверх; в видео-режиме background.render ПРОПУСКАЕТ заливку фона → видео видно
+       сквозь прозрачный canvas. Зеркало index.html. */
+    #video-layer-0a, #video-layer-0b {
+      position: fixed; inset: 0; z-index: 0; width: 100%; height: 100%;
+      object-fit: cover; pointer-events: none; opacity: 0;
+      transition: opacity var(--dur-scene, 600ms) cubic-bezier(0.16, 1, 0.30, 1);
+    }
+    /* Видео показано (data-video=on ставит background.js на первом canplaythrough) →
+       снять непрозрачную #stage-вигнетку, иначе ко-планарный #stage перекрыл бы видео.
+       Нет видео → вигнетка возвращается (фоллбэк байт-идентичен прежнему). */
+    html[data-video="on"] #stage { background: none; }
+
     /* Контейнер сцен. pointer-events:none на контейнере (как образцы), но
        интерактивным .seoul-* ниже возвращаем auto (plan-review Codex #3). */
     #scene { position: fixed; inset: 0; z-index: 5; pointer-events: none; }
@@ -190,7 +207,9 @@
       display: flex; flex-direction: column; gap: clamp(12px, 2.4vh, 22px); text-align: left;
     }
     .seoul-zone-cta {
-      position: absolute; left: var(--pad-x); right: var(--pad-x); bottom: 6.5%;
+      /* bottom 6.5%→11% — поднимаем CTA, чтобы не сливалась с футером
+         «© NUCLEUS · CONFIDENTIAL» (фидбэк оператора 2026-06-24). */
+      position: absolute; left: var(--pad-x); right: var(--pad-x); bottom: 11%;
       display: flex; flex-direction: column; align-items: center; gap: clamp(8px, 1.4vh, 14px);
     }
     .seoul-zone-final {
@@ -217,9 +236,13 @@
     }
     /* SEOUL — доминанта во всю ширину (кадр 4). */
     .seoul-word {
-      font-family: var(--font-head); font-weight: 900; font-size: clamp(72px, 26vw, 260px);
-      line-height: 0.9; letter-spacing: 0.02em; color: var(--text-hi); margin: 0;
-      text-shadow: 0 0 40px var(--accent-glow);
+      font-family: var(--font-head); font-weight: 900;
+      /* 21vw (было 26vw) + max-width — «SEOUL» влезает целиком на узком телефоне и не
+         обрезается до «SEO» (фидбэк оператора 2026-06-24). Чуть ярче glow — «пробивает»,
+         оставаясь в каноне (белый+циан, без нового цвета/мотива, S-D13). */
+      font-size: clamp(56px, 21vw, 240px); max-width: 100%;
+      line-height: 0.9; letter-spacing: 0.02em; color: #F4FAFE; margin: 0;
+      text-shadow: 0 0 48px var(--accent-glow), 0 0 12px rgba(88, 221, 227, 0.35);
     }
     .seoul-field {
       font-family: var(--font-mono); font-size: clamp(14px, 4vw, 20px); font-weight: 500;
@@ -243,11 +266,15 @@
     .seoul-compare__k { color: var(--text-low); }
     .seoul-stamp {
       position: relative; font-family: var(--font-mono); font-weight: 600;
-      font-size: clamp(18px, 5vw, 30px); letter-spacing: 0.3em; color: var(--accent);
-      border: 1px solid var(--line-cyan-hi); padding: clamp(8px, 1.6vh, 12px) clamp(18px, 5vw, 30px);
+      font-size: clamp(18px, 5vw, 30px); letter-spacing: 0.3em; color: var(--ok);
+      border: 1px solid var(--line-ok-hi); padding: clamp(8px, 1.6vh, 12px) clamp(18px, 5vw, 30px);
+      text-shadow: 0 0 18px var(--ok-glow);
     }
-    /* Грамматика «ПОДТВЕРЖДЕНО» ролика №1: двойная hairline-рамка, БЕЗ поворота/glow. */
-    .seoul-stamp::after { content: ""; position: absolute; inset: 4px; border: 1px solid var(--line-cyan); pointer-events: none; }
+    /* Штамп «CONFIRMED» — ЗЕЛЁНЫЙ (решение оператора 2026-06-24, brief C2-D9): «деплой
+       успешен». Осознанное исключение из цианового канона кадра 7 (screen.md §5).
+       Грамматика «ПОДТВЕРЖДЕНО» ролика №1: двойная hairline-рамка, статично (без
+       поворота/строба) — зелёный «холодный», закон §1/§2 «эскалация холодом» не нарушен. */
+    .seoul-stamp::after { content: ""; position: absolute; inset: 4px; border: 1px solid var(--line-ok); pointer-events: none; }
 
     /* Манифест (кадр 10) — сухие моно-строки. */
     .seoul-mrow {
@@ -317,6 +344,15 @@
       font-size: clamp(14px, 4vw, 18px); letter-spacing: 0.12em; padding: clamp(12px, 2vh, 16px) clamp(26px, 8vw, 44px);
       text-transform: none;
     }
+    /* IDLE — первичная кнопка с присутствием (фидбэк оператора 2026-06-24: «поднять
+       выше + выделить»). ТОЛЬКО IDLE (на вердиктах .seoul-cta остаётся сдержанной —
+       Codex: не толстить глобально). Циан, без нового цвета — канон. */
+    .seoul-cta--primary {
+      background: linear-gradient(180deg, rgba(88,221,227,0.22), rgba(88,221,227,0.09));
+      border-color: var(--accent); color: #EAFEFF; font-weight: 500;
+      box-shadow: 0 0 24px var(--accent-glow), inset 0 0 0 1px rgba(88, 221, 227, 0.18);
+      padding: clamp(14px, 2.4vh, 18px) clamp(34px, 12vw, 56px); letter-spacing: 0.16em;
+    }
     .seoul-btn {
       appearance: none; background: linear-gradient(180deg, rgba(8,11,16,0.8), rgba(8,11,16,0.9));
       border: 1px solid var(--line-cyan); border-left: 2px solid var(--line-cyan-hi); color: var(--accent);
@@ -374,7 +410,13 @@
 <body>
   <div id="stage" aria-hidden="true"></div>
 
-  <!-- Canvas визуала (свой B1-оркестратор; cyan-only, без видео). -->
+  <!-- Layer-0 фон-видео Higgsfield (фидбэк оператора 2026-06-24): два ping-pong <video>
+       ПОД #viz. Без src до рантайма — seoul/visuals.js→background.js ставит fetch→blob по
+       состоянию + кроссфейдит. muted/loop/playsinline — автоплей разрешён (экран нем). -->
+  <video id="video-layer-0a" muted loop playsinline preload="auto" aria-hidden="true"></video>
+  <video id="video-layer-0b" muted loop playsinline preload="auto" aria-hidden="true"></video>
+
+  <!-- Canvas визуала (свой B1-оркестратор; cyan-слои поверх Layer-0 видео). -->
   <canvas id="viz" aria-hidden="true"></canvas>
 
   <!-- Сцена (тело состояния) — монтирует seoul/scenes. -->
