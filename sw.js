@@ -9,7 +9,7 @@
 // GitHub-Pages-подпути (https://<user>.github.io/<repo>/). Бамп CACHE при правке
 // списка/ассетов, иначе старый кэш переживёт деплой.
 
-const CACHE = 'nucleus-seoul-v2';
+const CACHE = 'nucleus-seoul-v3';
 
 const ASSETS = [
   // НЕ кэшируем './' — на GitHub Pages корень без index.html отдаёт 404, а один
