@@ -153,6 +153,10 @@
     .seoul-hud--top {
       top: 0; left: 0; right: 0; display: flex; justify-content: space-between; align-items: center;
       gap: 8px; padding: clamp(14px, 2.2vh, 22px) var(--pad-x); font-size: clamp(10px, 2.6vw, 13px);
+      /* Сдвиг под safe-area сверху: HUD садится НИЖЕ системного статус-бара/Dynamic
+         Island, под баром остаётся только чёрный фон → кроп верхней полоски при
+         монтаже записи экрана iPhone не задевает wordmark/сессию. */
+      padding-top: calc(clamp(14px, 2.2vh, 22px) + env(safe-area-inset-top, 0px));
     }
     .seoul-hud--top::after {
       content: ""; position: absolute; left: var(--pad-x); right: var(--pad-x); bottom: 0; height: 1px;
@@ -163,6 +167,8 @@
     .seoul-hud--bottom {
       left: 0; right: 0; bottom: 0; text-align: center; font-size: clamp(8px, 2.2vw, 11px);
       padding: clamp(12px, 1.8vh, 18px) var(--pad-x); color: var(--text-low); opacity: 0.8;
+      /* Та же логика снизу: футер выше home-indicator (нижняя «чёрточка» iPhone). */
+      padding-bottom: calc(clamp(12px, 1.8vh, 18px) + env(safe-area-inset-bottom, 0px));
     }
 
     /* === Общие зоны (screen.md §3). === */
