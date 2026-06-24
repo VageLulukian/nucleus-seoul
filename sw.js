@@ -9,10 +9,12 @@
 // GitHub-Pages-подпути (https://<user>.github.io/<repo>/). Бамп CACHE при правке
 // списка/ассетов, иначе старый кэш переживёт деплой.
 
-const CACHE = 'nucleus-seoul-v1';
+const CACHE = 'nucleus-seoul-v2';
 
 const ASSETS = [
-  './',
+  // НЕ кэшируем './' — на GitHub Pages корень без index.html отдаёт 404, а один
+  // 404 валит весь cache.addAll. Точка входа приложения — seoul.html (manifest
+  // start_url тоже на неё), её и кэшируем; навигации офлайн фоллбэчат на неё.
   'seoul.html',
   'seoul.webmanifest',
   // seoul-модули
