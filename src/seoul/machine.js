@@ -22,7 +22,7 @@
 //     статус-строки), авто-переход в свой VERDICT;
 //   - REPAIR / SETTINGS — диегетические подэкраны «под капотом» (кадры 6/9);
 //   - VERDICT_3 — третий вердикт без паники (красный только в строке ROLLBACK, §5);
-//   - FINAL — терминальная карточка → красный затвор (кадр 13);
+//   - FINAL — холодный журнал прибытия (кадр 13, C2-D11), без затвора; кат в чёрный — на лице;
 //   - explainability — персистентный runtime-флаг (живёт в замыкании, как muted в
 //     аудио — переживает teardown; сбрасывается RESET). Тумблер OUT кадра 9 = пейофф;
 //   - SETTINGS→PROCESSING_3 (apply) НО-ОП, пока explainability !== false: главный
@@ -43,7 +43,7 @@ export const STATES = Object.freeze({
   PROCESSING_3: 'PROCESSING_3',
   VERDICT_3: 'VERDICT_3',       // кадр 10 — сухой манифест + красный ROLLBACK
   LOCKED: 'LOCKED',             // печать решения «залочено» — manifest SEALED (между VERDICT_3 и FINAL)
-  FINAL: 'FINAL',               // кадр 13 — RESISTANCE → красный затвор → в чёрный
+  FINAL: 'FINAL',               // кадр 13 — холодный журнал прибытия (ARRIVAL LOGGED…), без затвора (C2-D11)
 });
 
 // Капчур-состояния (8) — то, что снимается/проверяется покадрово (screen.md §5).

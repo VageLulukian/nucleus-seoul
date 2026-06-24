@@ -5,8 +5,8 @@
 //   - детерминизм органической цепочки §4 (две прогонки → идентичный trace);
 //   - гейт пейоффа: SETTINGS→PROCESSING_3 НО-ОП, пока explainability не OFF;
 //   - accent-гард: getAccent() == cyan во всех 8 (красный НЕ на canvas);
-//   - «красный ровно дважды»: --alert-строка только в VERDICT_3 (.seoul-mrow--alert)
-//     + затвор FINAL (#seoul-shutter); ни в одном другом кадре красного DOM нет;
+//   - «красный ровно один раз» (C2-D11): --alert-строка только в VERDICT_3
+//     (.seoul-mrow--alert); ни в одном другом кадре красного DOM нет; затвора FINAL нет;
 //   - частицы ≤ лимита; visualSample детерминирован.
 // Сентинел #__selftest (data-status PASS/FAIL) + document.title — как у спутника.
 
@@ -50,7 +50,7 @@ export async function launchSelfTest(ctx) {
       [STATES.SETTINGS, copy.SETTINGS.temperature.label],// temperature:
       [STATES.VERDICT_3, copy.VERDICT_3.rollback.value], // NOT RECOMMENDED
       [STATES.LOCKED, copy.LOCKED.tag],                  // DECISION LOCKED (экран «залочено»)
-      [STATES.FINAL, copy.FINAL.tag],                    // RESISTANCE: ACCOUNTED FOR
+      [STATES.FINAL, copy.FINAL.comfort.value],          // OUT OF SCOPE (журнал прибытия, C2-D11)
     ];
     for (const [target, text] of captureText) {
       const ok = nucleus.forceState(target);
@@ -72,8 +72,9 @@ export async function launchSelfTest(ctx) {
       }
     }
 
-    // FINAL-затвор — overlay существует и активируется по data-state (CSS).
-    if (!document.getElementById('seoul-shutter')) reasons.push('no-shutter-overlay');
+    // FINAL-затвора больше нет (C2-D11): #seoul-shutter удалён, кат в чёрный — на лице
+    // (кадр 14). Явно проверяем, что overlay отсутствует (страховка от регресса).
+    if (document.getElementById('seoul-shutter')) reasons.push('shutter-overlay-still-present');
 
     // --- 3. Гейт пейоффа: SETTINGS→PROCESSING_3 НО-ОП без OFF (plan-review #2) ---
     nucleus.dispatch('RESET');
@@ -148,16 +149,11 @@ export async function launchSelfTest(ctx) {
     if (!sceneHas(copy.VERDICT_1.runGloss)) reasons.push('missing-rungloss@VERDICT_1');
     nucleus.forceState(STATES.VERDICT_2);
     if (!sceneHas(copy.VERDICT_2.runGloss)) reasons.push('missing-rungloss@VERDICT_2');
-    // (d) красный затвор #seoul-shutter активен ТОЛЬКО в FINAL — в LOCKED он погашен
-    //     (CSS-селектор html[data-state="FINAL"]). Доказываем явно (Codex).
-    nucleus.forceState(STATES.LOCKED);
-    try {
-      const sh = document.getElementById('seoul-shutter');
-      if (sh && typeof getComputedStyle === 'function') {
-        const op = getComputedStyle(sh).opacity;
-        if (op && op !== '0' && op !== '') reasons.push('shutter-active@LOCKED:' + op);
-      }
-    } catch (_) { /* нет CSSOM — пропускаем, инвариант держит CSS-селектор */ }
+    // (d) FINAL — холодный журнал прибытия (C2-D11): красного DOM нет (страховка против
+    //     регресса конфабуляции/затвора; общий alert-DOM гард в цикле §2 уже это держит).
+    nucleus.forceState(STATES.FINAL);
+    if (sceneEl && sceneEl.querySelectorAll('[class*="alert"]').length !== 0) reasons.push('final-has-alert-dom');
+    if (!sceneHas(copy.FINAL.arrival.value)) reasons.push('final-missing-arrival');
 
     await nextFrame();
 

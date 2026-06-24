@@ -13,9 +13,9 @@
 //   - isAlert ВСЕГДА false — нет тряски ядра, scanlines белые, частицы без джиттера;
 //   - glitch НЕ подключён — экран ни разу не «рвётся»;
 //   - isScan = PROCESSING_* → ядро ускоряется, кольца рисуются, частицы стягиваются.
-// Красный живёт ТОЛЬКО в DOM (plan-review Codex finding #4: #viz лежит НИЖЕ #scene,
-// красным на canvas финальный текст не закрыть): строка ROLLBACK кадра 10 (--alert)
-// и overlay #seoul-shutter кадра 13 (красный вдох→чёрный) — оба в seoul.html, не тут.
+// Красный живёт ТОЛЬКО в DOM и ровно ОДИН раз (C2-D11): строка ROLLBACK кадра 10
+// (--alert) в seoul.html, не тут. Затвор FINAL снят — кат в чёрный делается на лице
+// (кадр 14, script.md), не на экране; FINAL — холодный журнал прибытия.
 
 import { makePRNG, createCore } from '../visuals/core.js';
 import { makeParticleField, createParticles } from '../visuals/particles.js';
@@ -169,7 +169,8 @@ export function createVisuals(opts) {
     rings.render(env);
     core.render(env);
     particles.render(env, field);
-    // glitch НЕ рисуется (экран не «рвётся»). Красный затвор — DOM (#seoul-shutter).
+    // glitch НЕ рисуется (экран не «рвётся»). Красный — только DOM-строка ROLLBACK кадра 10
+    // (затвор FINAL снят, C2-D11).
   }
 
   function visualSample() {
