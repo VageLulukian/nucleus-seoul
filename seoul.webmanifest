@@ -1,0 +1,11 @@
+{
+  "name": "NUCLEUS",
+  "short_name": "NUCLEUS",
+  "description": "NUCLEUS — life-path intelligence (reel-02 Seoul screen prop)",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#05070A",
+  "theme_color": "#05070A",
+  "start_url": "./seoul.html",
+  "scope": "./"
+}

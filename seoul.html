@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="ru" data-state="LOADING">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+  <!-- Repo-локальный маркер сборки: smoke.sh подтверждает НАШ сервер/страницу. -->
+  <meta name="nucleus-build" content="seoul" />
+
+  <!-- PWA standalone (S-D14, IMPLEMENT.md): «добавить на главный экран» → полный
+       bleed без хрома браузера; тёмный theme-color; iPhone Safari + Pixel Chrome. -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="theme-color" content="#05070A" />
+  <link rel="manifest" href="./seoul.webmanifest" />
+
+  <title>NUCLEUS</title>
+
+  <!-- Хук ошибок (идентичен index.html): инлайн ДО модулей; capture-фаза ловит
+       404 ресурсов, обёртка console.error — рантайм. Счётчик уходит в self-test. -->
+  <script>
+    (function installErrorHooks() {
+      window.__errCount = 0;
+      window.__errLog = [];
+      function record(kind, detail) {
+        window.__errCount += 1;
+        if (window.__errLog.length < 50) window.__errLog.push(kind + ': ' + detail);
+      }
+      window.addEventListener('error', function (e) {
+        if (e && e.target && e.target !== window && (e.target.src || e.target.href)) {
+          record('resource', String(e.target.src || e.target.href));
+        } else {
+          record('error', (e && e.message) || 'unknown');
+        }
+      }, true);
+      window.addEventListener('unhandledrejection', function (e) {
+        var reason = e && e.reason;
+        record('unhandledrejection', (reason && (reason.stack || reason.message)) || String(reason));
+      });
+      var nativeConsoleError = console.error.bind(console);
+      console.error = function () {
+        record('console.error', Array.prototype.join.call(arguments, ' '));
+        nativeConsoleError.apply(console, arguments);
+      };
+    })();
+  </script>
+
+  <style>
+    /* === Дизайн-токены — ПАРИТЕТ с index.html :root (тот же продукт, ролик №1).
+       Реальный циан #58DDE3 (НЕ устаревший #2BF5E0 из screen.md §2 — IMPLEMENT.md /
+       plan-review Codex: реальный index.html побеждает). Красный --alert только как
+       «необратимость» (строка ROLLBACK + затвор финала), не паника. === */
+    :root {
+      --bg-900: #05070A; --bg-800: #0A0E14; --bg-700: #111722; --bg-600: #18202E;
+      --text-hi: #E8EEF5; --text-mid: #AEB9C6; --text-low: #7B8796;
+      --accent: #58DDE3; --accent-deep: #1AA9B5; --accent-glow: rgba(88, 221, 227, 0.28);
+      --ok: #38E8B0;
+      --scene-accent: #58DDE3; /* seoul/visuals.js держит cyan во всех состояниях */
+      --alert: #FF2D43; --alert-deep: #8E0014; --alert-glow: rgba(255, 45, 67, 0.40);
+      --warn: #FFB020; --warn-glow: rgba(255, 176, 32, 0.45);
+      --font-head: "Martian Grotesk Condensed", "Martian Grotesk", system-ui, sans-serif;
+      --font-display: "Martian Grotesk", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      --font-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+      --dur-scene: 600ms;
+      --line-cyan-hi: rgba(88, 221, 227, 0.45);
+      --line-cyan: rgba(88, 221, 227, 0.26);
+      --line-cyan-lo: rgba(88, 221, 227, 0.14);
+      --line-dim: rgba(155, 168, 184, 0.15);
+      --line-red-hi: rgba(255, 45, 67, 0.50);
+      --line-red: rgba(255, 45, 67, 0.26);
+      /* Вертикальная сетка зон (screen.md §3, 9:16). */
+      --pad-x: clamp(20px, 6vw, 64px);
+    }
+
+    /* Самохост шрифтов — ПАРИТЕТ с index.html (Codex: копировать @font-face). */
+    @font-face {
+      font-family: "Martian Grotesk Condensed"; font-style: normal; font-weight: 900; font-display: swap;
+      src: url("./assets/fonts/martian-grotesk-condensed-black.woff2") format("woff2");
+    }
+    @font-face {
+      font-family: "Martian Grotesk"; font-style: normal; font-weight: 400; font-display: swap;
+      src: url("./assets/fonts/martian-grotesk-400.woff2") format("woff2");
+    }
+    @font-face {
+      font-family: "Martian Grotesk"; font-style: normal; font-weight: 500; font-display: swap;
+      src: url("./assets/fonts/martian-grotesk-500.woff2") format("woff2");
+    }
+    @font-face {
+      font-family: "IBM Plex Mono"; font-style: normal; font-weight: 400; font-display: swap;
+      src: url("./assets/fonts/ibm-plex-mono-latin-400.woff2") format("woff2");
+      unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-206F,U+2074,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
+    }
+    @font-face {
+      font-family: "IBM Plex Mono"; font-style: normal; font-weight: 400; font-display: swap;
+      src: url("./assets/fonts/ibm-plex-mono-cyrillic-400.woff2") format("woff2");
+      unicode-range: U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116;
+    }
+    @font-face {
+      font-family: "IBM Plex Mono"; font-style: normal; font-weight: 500; font-display: swap;
+      src: url("./assets/fonts/ibm-plex-mono-latin-500.woff2") format("woff2");
+      unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-206F,U+2074,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
+    }
+    @font-face {
+      font-family: "IBM Plex Mono"; font-style: normal; font-weight: 500; font-display: swap;
+      src: url("./assets/fonts/ibm-plex-mono-cyrillic-500.woff2") format("woff2");
+      unicode-range: U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116;
+    }
+    @font-face {
+      font-family: "IBM Plex Mono"; font-style: normal; font-weight: 600; font-display: swap;
+      src: url("./assets/fonts/ibm-plex-mono-latin-600.woff2") format("woff2");
+      unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+2000-206F,U+2074,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
+    }
+    @font-face {
+      font-family: "IBM Plex Mono"; font-style: normal; font-weight: 600; font-display: swap;
+      src: url("./assets/fonts/ibm-plex-mono-cyrillic-600.woff2") format("woff2");
+      unicode-range: U+0301,U+0400-045F,U+0490-0491,U+04B0-04B1,U+2116;
+    }
+
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0; padding: 0; width: 100%; height: 100%;
+      background: var(--bg-900); color: var(--text-hi);
+      font-family: var(--font-display);
+      font-variant-numeric: tabular-nums;
+      -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
+      text-rendering: optimizeLegibility; overflow: hidden;
+    }
+    html.cursor-hidden, html.cursor-hidden * { cursor: none !important; }
+
+    /* === Слои (вертикаль 9:16). === */
+    #stage {
+      position: fixed; inset: 0; z-index: 0;
+      background: radial-gradient(120% 70% at 50% 38%, var(--bg-800) 0%, var(--bg-900) 72%);
+    }
+    #viz { position: fixed; inset: 0; z-index: 1; display: block; width: 100%; height: 100%; pointer-events: none; }
+
+    /* Контейнер сцен. pointer-events:none на контейнере (как образцы), но
+       интерактивным .seoul-* ниже возвращаем auto (plan-review Codex #3). */
+    #scene { position: fixed; inset: 0; z-index: 5; pointer-events: none; }
+    .seoul-scene {
+      position: absolute; inset: 0;
+      animation: scene-in var(--dur-scene, 600ms) cubic-bezier(0.16, 1, 0.30, 1) both;
+      will-change: transform, opacity;
+    }
+    @keyframes scene-in {
+      from { opacity: 0; transform: translate3d(0, 10px, 0); }
+      to { opacity: 1; transform: translate3d(0, 0, 0); }
+    }
+
+    /* === HUD-кромка (постоянная). === */
+    #seoul-hud { position: fixed; inset: 0; z-index: 6; pointer-events: none; }
+    .seoul-hud { position: absolute; font-family: var(--font-mono); letter-spacing: 0.14em; color: var(--text-low); text-transform: uppercase; }
+    .seoul-hud--top {
+      top: 0; left: 0; right: 0; display: flex; justify-content: space-between; align-items: center;
+      gap: 8px; padding: clamp(14px, 2.2vh, 22px) var(--pad-x); font-size: clamp(10px, 2.6vw, 13px);
+    }
+    .seoul-hud--top::after {
+      content: ""; position: absolute; left: var(--pad-x); right: var(--pad-x); bottom: 0; height: 1px;
+      background: var(--scene-accent, var(--accent)); opacity: 0.14;
+    }
+    .seoul-hud__wordmark { color: var(--text-mid); font-weight: 600; letter-spacing: 0.2em; }
+    .seoul-hud__session { text-align: right; color: var(--text-low); }
+    .seoul-hud--bottom {
+      left: 0; right: 0; bottom: 0; text-align: center; font-size: clamp(8px, 2.2vw, 11px);
+      padding: clamp(12px, 1.8vh, 18px) var(--pad-x); color: var(--text-low); opacity: 0.8;
+    }
+
+    /* === Общие зоны (screen.md §3). === */
+    .seoul-context {
+      position: absolute; top: 8.5%; left: var(--pad-x); right: var(--pad-x); text-align: center;
+      font-family: var(--font-mono); font-size: clamp(12px, 3.4vw, 18px); letter-spacing: 0.2em;
+      text-transform: uppercase; color: var(--accent);
+    }
+    .seoul-zone-hero {
+      position: absolute; left: var(--pad-x); right: var(--pad-x); top: 13%; height: 47%;
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: clamp(14px, 3vh, 28px); text-align: center;
+    }
+    .seoul-zone-readout {
+      position: absolute; left: var(--pad-x); right: var(--pad-x); top: 60%; bottom: 14%;
+      display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: clamp(10px, 2vh, 18px); text-align: center;
+    }
+    .seoul-zone-manifest {
+      position: absolute; left: var(--pad-x); right: var(--pad-x); top: 34%;
+      display: flex; flex-direction: column; gap: clamp(12px, 2.4vh, 22px); text-align: left;
+    }
+    .seoul-zone-cta {
+      position: absolute; left: var(--pad-x); right: var(--pad-x); bottom: 6.5%;
+      display: flex; flex-direction: column; align-items: center; gap: clamp(8px, 1.4vh, 14px);
+    }
+    .seoul-zone-final {
+      position: absolute; left: var(--pad-x); right: var(--pad-x); top: 50%; transform: translateY(-50%);
+      display: flex; flex-direction: column; align-items: center; gap: clamp(14px, 3vh, 26px); text-align: center;
+    }
+
+    /* === Чистый режим — типографика. === */
+    .seoul-eyebrow {
+      display: inline-flex; align-items: center; gap: 12px; margin: 0;
+      font-family: var(--font-mono); font-size: clamp(10px, 2.6vw, 13px);
+      letter-spacing: 0.3em; text-transform: uppercase; color: var(--accent);
+    }
+    .seoul-eyebrow::before {
+      content: ""; width: 9px; height: 9px; border: 1px solid var(--accent); transform: rotate(45deg);
+      box-shadow: 0 0 12px var(--accent-glow);
+    }
+    .seoul-h1 {
+      font-family: var(--font-head); font-weight: 900; font-size: clamp(30px, 8.6vw, 64px);
+      line-height: 1.04; letter-spacing: -0.01em; color: #F1F6FA; margin: 0; max-width: 15ch;
+    }
+    .seoul-sub {
+      font-size: clamp(14px, 4vw, 20px); font-weight: 400; line-height: 1.5; color: #B7C2CE; margin: 0; max-width: 30ch;
+    }
+    /* SEOUL — доминанта во всю ширину (кадр 4). */
+    .seoul-word {
+      font-family: var(--font-head); font-weight: 900; font-size: clamp(72px, 26vw, 260px);
+      line-height: 0.9; letter-spacing: 0.02em; color: var(--text-hi); margin: 0;
+      text-shadow: 0 0 40px var(--accent-glow);
+    }
+    .seoul-field {
+      font-family: var(--font-mono); font-size: clamp(14px, 4vw, 20px); font-weight: 500;
+      letter-spacing: 0.12em; color: var(--accent); margin: 0;
+    }
+    .seoul-rationale {
+      font-family: var(--font-mono); font-size: clamp(11px, 3vw, 14px); letter-spacing: 0.06em;
+      color: var(--text-low); margin: 0; opacity: 0.7;
+    }
+    .seoul-rationale__k { text-transform: lowercase; }
+
+    /* Сверка прогонов + штамп CONFIRMED (кадр 7). */
+    .seoul-compare {
+      font-family: var(--font-mono); font-size: clamp(13px, 3.6vw, 18px); color: var(--text-mid);
+      letter-spacing: 0.06em; border: 1px solid var(--line-cyan); border-radius: 2px;
+      padding: clamp(12px, 2.4vh, 18px) clamp(16px, 5vw, 30px);
+      background: linear-gradient(180deg, rgba(8,11,16,0.72), rgba(8,11,16,0.82)); text-align: left;
+    }
+    .seoul-compare__row { margin: clamp(2px, 0.6vh, 6px) 0; white-space: pre; }
+    .seoul-compare__match { color: var(--text-hi); }
+    .seoul-compare__k { color: var(--text-low); }
+    .seoul-stamp {
+      position: relative; font-family: var(--font-mono); font-weight: 600;
+      font-size: clamp(18px, 5vw, 30px); letter-spacing: 0.3em; color: var(--accent);
+      border: 1px solid var(--line-cyan-hi); padding: clamp(8px, 1.6vh, 12px) clamp(18px, 5vw, 30px);
+    }
+    /* Грамматика «ПОДТВЕРЖДЕНО» ролика №1: двойная hairline-рамка, БЕЗ поворота/glow. */
+    .seoul-stamp::after { content: ""; position: absolute; inset: 4px; border: 1px solid var(--line-cyan); pointer-events: none; }
+
+    /* Манифест (кадр 10) — сухие моно-строки. */
+    .seoul-mrow {
+      display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: baseline; gap: clamp(10px, 3vw, 22px);
+      font-family: var(--font-mono); font-size: clamp(14px, 4vw, 20px); letter-spacing: 0.06em; margin: 0;
+    }
+    .seoul-mrow__k { color: var(--text-low); text-transform: uppercase; letter-spacing: 0.14em; }
+    .seoul-mrow__cell { display: inline-flex; align-items: center; justify-content: flex-end; gap: 8px; }
+    .seoul-mrow__v { color: var(--text-hi); font-weight: 500; text-align: right; }
+    /* ПЕРВОЕ появление красного: строка ROLLBACK (LED + слова), статично, без паники. */
+    .seoul-mrow--alert .seoul-mrow__v { color: var(--alert); }
+    .seoul-mrow__led {
+      width: 9px; height: 9px; border-radius: 50%; background: var(--alert); flex: 0 0 auto;
+      box-shadow: 0 0 8px var(--alert-glow);
+    }
+
+    /* Финал (кадр 13). */
+    .seoul-tag {
+      font-family: var(--font-mono); font-size: clamp(12px, 3.4vw, 17px); letter-spacing: 0.22em;
+      text-transform: uppercase; color: var(--text-mid); margin: 0;
+    }
+    .seoul-finalline {
+      font-family: var(--font-head); font-weight: 900; font-size: clamp(24px, 6.6vw, 46px);
+      line-height: 1.1; color: var(--text-hi); margin: 0; max-width: 18ch;
+    }
+
+    /* === Технический режим (кадры 3/6/9): левый «консольный» каркас. === */
+    .seoul-scene--tech .seoul-zone-readout { text-align: left; align-items: stretch; top: 56%; }
+    .seoul-rule {
+      position: absolute; top: 7.2%; left: var(--pad-x); right: var(--pad-x); height: 1px;
+      background: repeating-linear-gradient(90deg, var(--line-cyan) 0 8px, transparent 8px 16px);
+    }
+    .seoul-coreonline {
+      position: absolute; top: 8.4%; left: var(--pad-x); font-family: var(--font-mono);
+      font-size: clamp(11px, 3vw, 14px); letter-spacing: 0.16em; text-transform: uppercase; color: var(--accent); margin: 0;
+    }
+    .seoul-dominant {
+      font-family: var(--font-mono); font-weight: 500; font-size: clamp(26px, 8vw, 52px);
+      letter-spacing: 0.02em; color: var(--text-hi); margin: 0;
+    }
+    .seoul-query {
+      font-family: var(--font-mono); font-size: clamp(12px, 3.4vw, 16px); color: var(--text-low);
+      letter-spacing: 0.04em; margin: 0; opacity: 0.8;
+    }
+    .seoul-status {
+      font-family: var(--font-mono); font-size: clamp(13px, 3.6vw, 17px); color: #C9F6F7; letter-spacing: 0.04em; margin: 0;
+    }
+    /* Консольные пары ключ/значение (REPAIR/SETTINGS). */
+    .seoul-kv {
+      display: flex; align-items: baseline; gap: 12px; font-family: var(--font-mono);
+      font-size: clamp(13px, 3.6vw, 17px); letter-spacing: 0.04em; color: var(--text-mid);
+      padding: clamp(7px, 1.4vh, 11px) 0; border-bottom: 1px solid var(--line-dim); margin: 0;
+    }
+    .seoul-kv__k { color: var(--text-low); min-width: 11ch; }
+    .seoul-kv__v { color: var(--text-hi); }
+    .seoul-kv__v--warnword { color: var(--warn); letter-spacing: 0.12em; }
+    .seoul-kv--sub { border-bottom: 0; color: var(--text-low); font-size: clamp(11px, 3vw, 14px); padding-top: 2px; }
+    .seoul-kv--sub.is-disabled .seoul-kv__v { color: var(--text-low); }
+    .seoul-kv--toggle { align-items: center; }
+    .seoul-kv--toggle.is-off .seoul-kv__k { color: var(--text-low); text-decoration: line-through; opacity: 0.7; }
+
+    /* Кнопки (тач-таргеты) — pointer-events:auto (plan-review Codex #3). */
+    .seoul-cta, .seoul-btn, .seoul-toggle, .seoul-apply { pointer-events: auto; cursor: pointer; font-family: var(--font-mono); }
+    .seoul-cta {
+      appearance: none; background: linear-gradient(180deg, rgba(88,221,227,0.10), rgba(88,221,227,0.04));
+      border: 1px solid var(--line-cyan-hi); color: var(--accent); border-radius: 4px;
+      font-size: clamp(14px, 4vw, 18px); letter-spacing: 0.12em; padding: clamp(12px, 2vh, 16px) clamp(26px, 8vw, 44px);
+      text-transform: none;
+    }
+    .seoul-btn {
+      appearance: none; background: linear-gradient(180deg, rgba(8,11,16,0.8), rgba(8,11,16,0.9));
+      border: 1px solid var(--line-cyan); border-left: 2px solid var(--line-cyan-hi); color: var(--accent);
+      border-radius: 2px; font-size: clamp(12px, 3.4vw, 15px); letter-spacing: 0.1em;
+      padding: clamp(10px, 1.8vh, 14px) clamp(16px, 5vw, 26px); text-align: left;
+    }
+    .seoul-btnrow { display: flex; align-items: center; gap: 12px; margin-top: clamp(10px, 2vh, 16px); }
+    .seoul-btn__status { font-family: var(--font-mono); font-size: clamp(11px, 3vw, 14px); color: var(--ok); letter-spacing: 0.08em; }
+    .seoul-btn.is-ok { border-left-color: var(--ok); color: var(--ok); }
+
+    /* Тумблер explainability — главный жест (кадр 9). Циан, без красного. */
+    .seoul-toggle { display: inline-flex; align-items: center; gap: 12px; background: none; border: 0; padding: 6px 0; }
+    .seoul-toggle__track {
+      position: relative; width: clamp(54px, 16vw, 76px); height: clamp(24px, 7vw, 32px); border-radius: 999px;
+      border: 1px solid var(--line-cyan-hi); background: rgba(88,221,227,0.10); transition: background 200ms ease;
+    }
+    .seoul-toggle__knob {
+      position: absolute; top: 50%; left: 3px; transform: translateY(-50%);
+      width: clamp(18px, 5.4vw, 24px); height: clamp(18px, 5.4vw, 24px); border-radius: 50%;
+      background: var(--accent); box-shadow: 0 0 10px var(--accent-glow); transition: left 200ms cubic-bezier(0.16,1,0.3,1);
+    }
+    .seoul-toggle.is-off .seoul-toggle__track { background: rgba(88,221,227,0.04); border-color: var(--line-cyan); }
+    .seoul-toggle.is-off .seoul-toggle__knob { left: calc(100% - clamp(18px, 5.4vw, 24px) - 3px); background: var(--accent-deep); box-shadow: none; }
+    .seoul-toggle__state { font-family: var(--font-mono); font-size: clamp(12px, 3.4vw, 15px); letter-spacing: 0.16em; color: var(--accent); }
+    .seoul-toggle.is-off .seoul-toggle__state { color: var(--text-low); }
+
+    .seoul-apply { transition: opacity 200ms ease; }
+    .seoul-apply.is-disabled { opacity: 0.4; cursor: default; }
+    .seoul-apply__hint { font-family: var(--font-mono); font-size: clamp(10px, 2.8vw, 12px); color: var(--text-low); margin: 0; opacity: 0.7; }
+    .seoul-apply__hint.is-hidden { display: none; }
+
+    /* === FINAL — красный вдох-затвор → в чёрный. Overlay НАД сценой (plan-review
+       Codex #4): #viz лежит ниже #scene, красным на canvas финальный текст не
+       закрыть. Холодный, медленный, без сирены — отголосок LOCKED ролика №1. === */
+    #seoul-shutter { position: fixed; inset: 0; z-index: 10; pointer-events: none; opacity: 0; background: #000; }
+    html[data-state="FINAL"] #seoul-shutter { animation: seoul-shutter 1.8s cubic-bezier(0.4, 0, 0.6, 1) forwards; }
+    @keyframes seoul-shutter {
+      0%   { opacity: 0; background: radial-gradient(130% 100% at 50% 45%, rgba(5,7,10,0) 38%, rgba(5,7,10,0.55) 100%); }
+      30%  { opacity: 1; background: radial-gradient(130% 100% at 50% 45%, rgba(255,45,67,0) 22%, rgba(255,45,67,0.26) 64%, rgba(10,2,5,0.86) 100%); }
+      62%  { opacity: 1; background: radial-gradient(150% 110% at 50% 45%, rgba(255,45,67,0.20) 0%, rgba(8,2,4,0.95) 66%); }
+      100% { opacity: 1; background: #000; }
+    }
+
+    /* Режим чистого кадра (?fit=shoot): убрать любой нескадровый хром (его и так
+       немного — HUD остаётся, это часть «дорогого» экрана). */
+    html[data-fit="shoot"] #stage { background: var(--bg-900); }
+
+    .visually-hidden { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; border: 0; clip: rect(0 0 0 0); clip-path: inset(50%); overflow: hidden; white-space: nowrap; }
+    @media (prefers-reduced-motion: reduce) {
+      .seoul-scene { animation: none; }
+      html[data-state="FINAL"] #seoul-shutter { animation: none; opacity: 1; background: #000; }
+    }
+  </style>
+</head>
+<body>
+  <div id="stage" aria-hidden="true"></div>
+
+  <!-- Canvas визуала (свой B1-оркестратор; cyan-only, без видео). -->
+  <canvas id="viz" aria-hidden="true"></canvas>
+
+  <!-- Сцена (тело состояния) — монтирует seoul/scenes. -->
+  <main id="scene"></main>
+
+  <!-- Постоянная HUD-кромка — монтирует seoul/hud.js. -->
+  <div id="seoul-hud" aria-hidden="true"></div>
+
+  <!-- FINAL красный вдох-затвор → в чёрный (overlay над сценой). -->
+  <div id="seoul-shutter" aria-hidden="true"></div>
+
+  <!-- Сентинел self-test (smoke.sh грепает в --dump-dom). -->
+  <div id="__selftest" class="visually-hidden" data-status="PENDING"></div>
+
+  <script type="module" src="./src/seoul/main.js"></script>
+
+  <!-- Регистрация офлайн service worker (S-D14): пропускаем в ?selftest (кэш не
+       должен мешать детерминизму тестов). На http (кроме localhost) register молча
+       не сработает — экран всё равно работает, просто без офлайн-кэша; на https
+       (GitHub Pages) → после первой загрузки приложение готово к работе без сети. -->
+  <script>
+    if ('serviceWorker' in navigator && !new URLSearchParams(location.search).has('selftest')) {
+      window.addEventListener('load', function () {
+        navigator.serviceWorker.register('sw.js').catch(function () { /* нет https — без офлайна */ });
+      });
+    }
+  </script>
+</body>
+</html>
