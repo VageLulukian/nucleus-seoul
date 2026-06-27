@@ -7,6 +7,6 @@
   "orientation": "portrait",
   "background_color": "#05070A",
   "theme_color": "#05070A",
-  "start_url": "./seoul.html",
+  "start_url": "./seoul.html?state=FINAL",
   "scope": "./"
 }
